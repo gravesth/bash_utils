@@ -1,11 +1,13 @@
 #include <stdio.h> 
+#include <string.h> 
 // ./main -b "text.txt"
 
 int none_flags(char *str, char *line); 
 int number_nonblank(char *str, char *line);
 
 int main(int argc, char *argv[]) {
-    char line[4096]; 
+    char line[1024]; 
+    (void)argc; 
     // 0 - имя исполняемого файла
     // 1 - cat или grep 
     // 2 - флаг
@@ -17,9 +19,9 @@ int main(int argc, char *argv[]) {
                 return 0; 
             }
             break;
-        case 'n':
-        case 's':
-        case 't':
+        // case 'n':
+        // case 's':
+        // case 't':
         } 
     } else {  
         if(none_flags(argv[1], line)) { 
@@ -38,18 +40,18 @@ int number_nonblank(char *str, char *line) {
         return 0; 
     }
 
-    while(fgets(line, sizeof(line), file) != NULL) { 
-        // Перезаписываем буффер line каждую итерацию
-        if (line[0] == '\n') {
-            printf("%s", "\n"); 
-        } else {
+    while(fgets(line, 1024, file) != NULL) { 
+        if (line[0] != '\n' && line[0] != '\0') {
             count++; 
-            printf("     %d  %s", count, line); // выводим на экран
+            size_t len = strlen(line);
+            if (len > 0 && line[len-1] == '\n') {
+                line[len-1] = '\0';
+            }
+            printf("%6d  %s\n", count, line); 
+        } else if (line[0] == '\n') {
+            printf("\n");
         }
     }
-    // line - буффер. 
-    // sizeof(line) - читаем не более Н символов
-    // файловый входной поток
 
     fclose(file);
     return 1; 
@@ -62,12 +64,11 @@ int none_flags(char *str, char *line) {
         return 0; 
     }
 
-    while(fgets(line, sizeof(line), file) != NULL) { 
-        // Перезаписываем буффер line каждую итерацию
-        printf("%s", line); // выводим на экран
+    while(fgets(line, 1024, file) != NULL) { 
+        printf("%s", line); 
     }
     // line - буффер. 
-    // sizeof(line) - читаем не более Н символов
+    // читаем не более 1024 символов
     // входной поток
 
     fclose(file);
