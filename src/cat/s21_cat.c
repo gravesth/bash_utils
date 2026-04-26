@@ -26,8 +26,14 @@ int main(int argc, char* argv[]) {
         if (number(argv[2], line)) return 0;
         break;
       case 's':
-
-        // case 't':
+        if (squeeze_blank(argv[2])) return 0;
+        break;
+      case 't':
+        if (t_posix_flag(argv[2])) return 0;
+        break;
+      case 'T':
+        if (t_gnu_flag(argv[2])) return 0;
+        break;
     }
   } else {
     if (none_flags(argv[1], line)) return 0;
@@ -165,10 +171,13 @@ int t_posix_flag(char* str) {
   int ch;
   while ((ch = fgetc(file)) != EOF) {
     if (ch == '\t') {
-      printf("^I");  // отображаем табы
+      printf("^I");
+      continue;
+    } else if (ch == '\n') {
+      putchar('\n');
       continue;
     } else if (is_control_sym(ch)) {
-      print_control_sym(ch);  // + управляющие символы
+      print_control_sym(ch);
       continue;
     }
     printf("%c", (char)ch);
@@ -176,7 +185,6 @@ int t_posix_flag(char* str) {
   fclose(file);
   return 1;
 }
-
 // Flag -T gnu
 int t_gnu_flag(char* str) {
   FILE* file = fopen(str, "r");
