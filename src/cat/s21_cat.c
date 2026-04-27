@@ -2,79 +2,139 @@
 
 // ./main -b "text.txt"
 
-int main(int argc, char* argv[]) {
-  char line[1024];
-  (void)argc;
+int streq(const char *a, const char *b) { // функция для сравнения строк
+  int i = 0;
+  while (a[i] && b[i]) {
+    if (a[i] != b[i])
+      return 0;
+    i++;
+  }
+  return a[i] == b[i]; // если вышли из цикла -> true (строки равны)
+}
+
+int main(int argc, char *argv[]) {
+  if (argc < 2) {
+    return 0;
+  }
+
+  char *file_name = NULL;
+  if (argv[1][0] == '-') {
+    if (argc < 3) {
+      return 0;
+    }
+    file_name = argv[2];
+  } else {
+    file_name = argv[1];
+  }
+
+  if (streq(argv[1], "-b") || streq(argv[1], "--number-nonblank")) {
+    return number_nonblank(file_name);
+
+  } else if (streq(argv[1], "-n") || streq(argv[1], "--number")) {
+    return number(file_name);
+
+  } else if (streq(argv[1], "-s") || streq(argv[1], "--squeeze-blank")) {
+    return squeeze_blank(file_name);
+  }
+
   // 0 - имя исполняемого файла
   // 1 - флаг
   // 2 - ad
 
   // 2 - имя файла
   if (argv[1][0] ==
-      '-') {  // обработать отдельно случай без аргументов - вывести ошибку
+      '-') { // обработать отдельно случай без аргументов - вывести ошибку
     switch (argv[1][1]) {
-      case 'b':
-        if (number_nonblank(argv[2], line)) return 0;
-        break;
-      case 'E':
-        if (e_gnu_flag(argv[2])) return 0;
-        break;
-      case 'e':
-        if (e_posix_flag(argv[2])) return 0;
-        break;
-      case 'n':
-        if (number(argv[2], line)) return 0;
-        break;
-      case 's':
-        if (squeeze_blank(argv[2])) return 0;
-        break;
-      case 't':
-        if (t_posix_flag(argv[2])) return 0;
-        break;
-      case 'T':
-        if (t_gnu_flag(argv[2])) return 0;
-        break;
+    case 'b':
+      if (number_nonblank(file_name))
+        return 0;
+      break;
+
+    case 'E':
+      if (e_gnu_flag(file_name))
+        return 0;
+      break;
+    case 'e':
+      if (e_posix_flag(file_name))
+        return 0;
+      break;
+    case 'n':
+      if (number(file_name))
+        return 0;
+      break;
+    case 's':
+      if (squeeze_blank(file_name))
+        return 0;
+      break;
+    case 't':
+      if (t_posix_flag(file_name))
+        return 0;
+      break;
+    case 'T':
+      if (t_gnu_flag(file_name))
+        return 0;
+      break;
     }
   } else {
-    if (none_flags(argv[1], line)) return 0;
+    if (none_flags(file_name))
+      return 0;
   }
+
+  return 0;
 }
 
 int is_control_sym(int ch) {
   // шестрадцатеричное представление управляющих символов от 0 до 31 и 127
-  if (ch == 127) return 1;
-  if (ch >= 0x00 && ch <= 0x1F) return 1;
+  if (ch == 127)
+    return 1;
+  if (ch >= 0x00 && ch <= 0x1F && ch != '\t' && ch != '\n')
+    return 1;
   return 0;
 }
 
 void print_control_sym(int ch) {
-  if (ch == 0x7F) printf("?");  // Отдельно обработаем DEL
-  if (ch == 0x09)
-    printf("\t");  // Отдельно отображаем таб, как как он не входит в -v
+  if (ch >= 128) {
+    printf("M-");
+    ch -= 128;
+  }
+
+  if (ch == 0x7F)
+    printf("^?"); // Отдельно обработаем DEL
+  else if (ch == 0x09)
+    printf("^I"); // Отдельно отображаем таб, как как он не входит в -v
+  else if (ch >= 0x00 && ch <= 0x1F)
+    printf("^%c", ch + 64);
   // ASCII начинается с 65. Выводим ^ + управляющий символ в ASCII
   else
-    printf("^%c", ch + 64);
+    printf("%c", (char)ch);
 }
 
+int is_blank_line(char *line) {
+  int i = 0;
+  while (line[i]) {
+    if (line[i] != ' ' && line[i] != '\t' && line[i] != '\n')
+      return 0;
+    i++;
+  }
+  return 1;
+}
 // Flag -b
-int number_nonblank(char* str, char* line) {
-  FILE* file = fopen(str, "r");
-  int count = 0;
+int number_nonblank(char *str) {
+  FILE *file = fopen(str, "r");
   if (file == NULL) {
-    printf("%s", "n/a");
+    printf("n/a");
     return 0;
   }
 
-  while (fgets(line, 1024, file) != NULL) {
-    if (line[0] != '\n' && line[0] != '\0') {
+  char line[1024];
+  int count = 0;
+
+  while (fgets(line, sizeof(line), file) != NULL) {
+    if (line[0] == '\n') {
+      printf("%s", line);
+    } else {
       count++;
-      size_t len = strlen(line);
-      if (len > 0 && line[len - 1] == '\n') {
-        line[len - 1] = '\0';
-      }
-      printf("%6d\t%s\n", count, line);
-    } else if (line[0] == '\n') {
-      printf("\n");
+      printf("%6d\t%s", count, line);
     }
   }
 
@@ -84,8 +144,8 @@ int number_nonblank(char* str, char* line) {
 
 // Реализация флага -E без -v (GNU only).
 // Отображаем только $ если \n
-int e_gnu_flag(char* str) {
-  FILE* file = fopen(str, "r");
+int e_gnu_flag(char *str) {
+  FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("%s", "n/a");
     return 0;
@@ -101,11 +161,12 @@ int e_gnu_flag(char* str) {
   fclose(file);
   return 1;
 }
+
 // Реализация флага -е c -v (POSIX)
 // Отображаем все управляющие(непечатаемые) символы кроме таба
 // В конце строки также отображаем $
-int e_posix_flag(char* str) {
-  FILE* file = fopen(str, "r");
+int e_posix_flag(char *str) {
+  FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("n/a");
     return 0;
@@ -115,7 +176,7 @@ int e_posix_flag(char* str) {
     if (ch == '\n') {
       printf("$\n");
       continue;
-    } else if (is_control_sym(ch)) {
+    } else if (is_control_sym(ch) || ch >= 128) {
       print_control_sym(ch);
       continue;
     }
@@ -126,33 +187,41 @@ int e_posix_flag(char* str) {
 }
 
 // Flag -n
-int number(char* str, char* line) {
-  FILE* file = fopen(str, "r");
+int number(char *str) {
+  FILE *file = fopen(str, "r");
   int count = 0;
+  char line[1024];
+
   if (file == NULL) {
     printf("%s", "n/a");
-    fclose(file);
     return 0;
   }
+
   while (fgets(line, 1024, file) != NULL) {
     count++;
     printf("%6d\t%s", count, line);
   }
+
   fclose(file);
   return 1;
 }
 
 // Flag -s
-int squeeze_blank(char* str) {
-  FILE* file = fopen(str, "r");
-  if (file == NULL) return 1;
+int squeeze_blank(char *str) {
+  FILE *file = fopen(str, "r");
+  if (file == NULL)
+    return 1;
+
   char line[1024];
   int prev_empty = 0;
+
   while (fgets(line, sizeof(line), file) != NULL) {
     int is_empty = (line[0] == '\n');
+
     if (is_empty && prev_empty) {
-      continue;  // пропускаем вторую и более пустую строку
+      continue; // пропускаем вторую и более пустую строку
     }
+
     printf("%s", line);
     prev_empty = is_empty;
   }
@@ -162,8 +231,8 @@ int squeeze_blank(char* str) {
 }
 
 // Flag -t posix with -v
-int t_posix_flag(char* str) {
-  FILE* file = fopen(str, "r");
+int t_posix_flag(char *str) {
+  FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("n/a");
     return 0;
@@ -176,7 +245,7 @@ int t_posix_flag(char* str) {
     } else if (ch == '\n') {
       putchar('\n');
       continue;
-    } else if (is_control_sym(ch)) {
+    } else if (is_control_sym(ch) || ch >= 128) {
       print_control_sym(ch);
       continue;
     }
@@ -185,9 +254,10 @@ int t_posix_flag(char* str) {
   fclose(file);
   return 1;
 }
+
 // Flag -T gnu
-int t_gnu_flag(char* str) {
-  FILE* file = fopen(str, "r");
+int t_gnu_flag(char *str) {
+  FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("%s", "n/a");
     return 0;
@@ -195,7 +265,7 @@ int t_gnu_flag(char* str) {
   int ch;
   while ((ch = fgetc(file)) != EOF) {
     if (ch == '\t') {
-      printf("^I");  // отображаем табы
+      printf("^I"); // отображаем табы
       continue;
     }
     printf("%c", (char)ch);
@@ -203,13 +273,16 @@ int t_gnu_flag(char* str) {
   fclose(file);
   return 1;
 }
+
 // None flags
-int none_flags(char* str, char* line) {
-  FILE* file = fopen(str, "r");
+int none_flags(char *str) {
+  FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("%s", "n/a");
     return 0;
   }
+
+  char line[1024];
 
   while (fgets(line, 1024, file) != NULL) {
     printf("%s", line);

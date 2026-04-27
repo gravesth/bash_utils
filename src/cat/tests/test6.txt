@@ -1,0 +1,7 @@
+plain
+	indented	with	tabs
+
+
+line after empty block
+	
+finish
