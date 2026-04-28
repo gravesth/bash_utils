@@ -1,6 +1,17 @@
 #include <stdio.h>
 #include <string.h>
 
+typedef struct flags {
+    int b; // number_nonblank
+    int E;
+    int e; 
+    int n; 
+    int s; 
+    int t; 
+    int T; 
+} s_flags;
+
+
 int none_flags(const char *str);
 int number_nonblank(const char *str);
 int e_posix_flag(const char *str);
