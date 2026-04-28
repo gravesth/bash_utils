@@ -6,8 +6,7 @@
 int streq(const char *a, const char *b) {
   int i = 0;
   while (a[i] && b[i]) {
-    if (a[i] != b[i])
-      return 0;
+    if (a[i] != b[i]) return 0;
     i++;
   }
   // если вышли из цикла -> true (строки равны)
@@ -19,7 +18,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  char *file_name = NULL;
+  const char *file_name = NULL;
   if (argv[1][0] == '-') {
     if (argc < 3) {
       return 0;
@@ -45,41 +44,33 @@ int main(int argc, char *argv[]) {
 
   // 2 - имя файла
   if (argv[1][0] ==
-      '-') { // обработать отдельно случай без аргументов - вывести ошибку
+      '-') {  // обработать отдельно случай без аргументов - вывести ошибку
     switch (argv[1][1]) {
-    case 'b':
-      if (number_nonblank(file_name))
-        return 0;
-      break;
+      case 'b':
+        if (number_nonblank(file_name)) return 0;
+        break;
 
-    case 'E':
-      if (e_gnu_flag(file_name))
-        return 0;
-      break;
-    case 'e':
-      if (e_posix_flag(file_name))
-        return 0;
-      break;
-    case 'n':
-      if (number(file_name))
-        return 0;
-      break;
-    case 's':
-      if (squeeze_blank(file_name))
-        return 0;
-      break;
-    case 't':
-      if (t_posix_flag(file_name))
-        return 0;
-      break;
-    case 'T':
-      if (t_gnu_flag(file_name))
-        return 0;
-      break;
+      case 'E':
+        if (e_gnu_flag(file_name)) return 0;
+        break;
+      case 'e':
+        if (e_posix_flag(file_name)) return 0;
+        break;
+      case 'n':
+        if (number(file_name)) return 0;
+        break;
+      case 's':
+        if (squeeze_blank(file_name)) return 0;
+        break;
+      case 't':
+        if (t_posix_flag(file_name)) return 0;
+        break;
+      case 'T':
+        if (t_gnu_flag(file_name)) return 0;
+        break;
     }
   } else {
-    if (none_flags(file_name))
-      return 0;
+    if (none_flags(file_name)) return 0;
   }
 
   return 0;
@@ -87,10 +78,8 @@ int main(int argc, char *argv[]) {
 
 int is_control_sym(int ch) {
   // шестрадцатеричное представление управляющих символов от 0 до 31 и 127
-  if (ch == 127)
-    return 1;
-  if (ch >= 0x00 && ch <= 0x1F && ch != '\t' && ch != '\n')
-    return 1;
+  if (ch == 127) return 1;
+  if (ch >= 0x00 && ch <= 0x1F && ch != '\t' && ch != '\n') return 1;
   return 0;
 }
 
@@ -101,9 +90,9 @@ void print_control_sym(int ch) {
   }
 
   if (ch == 0x7F)
-    printf("^?"); // Отдельно обработаем DEL
+    printf("^?");  // Отдельно обработаем DEL
   else if (ch == 0x09)
-    printf("^I"); // Отдельно отображаем таб, как как он не входит в -v
+    printf("^I");  // Отдельно отображаем таб, как как он не входит в -v
   else if (ch >= 0x00 && ch <= 0x1F)
     printf("^%c", ch + 64);
   // ASCII начинается с 65. Выводим ^ + управляющий символ в ASCII
@@ -111,17 +100,8 @@ void print_control_sym(int ch) {
     printf("%c", (char)ch);
 }
 
-int is_blank_line(char *line) {
-  int i = 0;
-  while (line[i]) {
-    if (line[i] != ' ' && line[i] != '\t' && line[i] != '\n')
-      return 0;
-    i++;
-  }
-  return 1;
-}
 // Flag -b
-int number_nonblank(char *str) {
+int number_nonblank(const char *str) {
   FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("n/a");
@@ -146,7 +126,7 @@ int number_nonblank(char *str) {
 
 // Реализация флага -E без -v (GNU only).
 // Отображаем только $ если \n
-int e_gnu_flag(char *str) {
+int e_gnu_flag(const char *str) {
   FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("%s", "n/a");
@@ -167,7 +147,7 @@ int e_gnu_flag(char *str) {
 // Реализация флага -е c -v (POSIX)
 // Отображаем все управляющие(непечатаемые) символы кроме таба
 // В конце строки также отображаем $
-int e_posix_flag(char *str) {
+int e_posix_flag(const char *str) {
   FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("n/a");
@@ -189,7 +169,7 @@ int e_posix_flag(char *str) {
 }
 
 // Flag -n
-int number(char *str) {
+int number(const char *str) {
   FILE *file = fopen(str, "r");
   int count = 0;
   char line[1024];
@@ -209,10 +189,9 @@ int number(char *str) {
 }
 
 // Flag -s
-int squeeze_blank(char *str) {
+int squeeze_blank(const char *str) {
   FILE *file = fopen(str, "r");
-  if (file == NULL)
-    return 1;
+  if (file == NULL) return 1;
 
   char line[1024];
   int prev_empty = 0;
@@ -221,7 +200,7 @@ int squeeze_blank(char *str) {
     int is_empty = (line[0] == '\n');
 
     if (is_empty && prev_empty) {
-      continue; // пропускаем вторую и более пустую строку
+      continue;  // пропускаем вторую и более пустую строку
     }
 
     printf("%s", line);
@@ -233,7 +212,7 @@ int squeeze_blank(char *str) {
 }
 
 // Flag -t posix with -v
-int t_posix_flag(char *str) {
+int t_posix_flag(const char *str) {
   FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("n/a");
@@ -258,7 +237,7 @@ int t_posix_flag(char *str) {
 }
 
 // Flag -T gnu
-int t_gnu_flag(char *str) {
+int t_gnu_flag(const char *str) {
   FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("%s", "n/a");
@@ -267,7 +246,7 @@ int t_gnu_flag(char *str) {
   int ch;
   while ((ch = fgetc(file)) != EOF) {
     if (ch == '\t') {
-      printf("^I"); // отображаем табы
+      printf("^I");  // отображаем табы
       continue;
     }
     printf("%c", (char)ch);
@@ -277,7 +256,7 @@ int t_gnu_flag(char *str) {
 }
 
 // None flags
-int none_flags(char *str) {
+int none_flags(const char *str) {
   FILE *file = fopen(str, "r");
   if (file == NULL) {
     printf("%s", "n/a");
