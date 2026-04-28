@@ -2,14 +2,16 @@
 
 // ./main -b "text.txt"
 
-int streq(const char *a, const char *b) { // функция для сравнения строк
+// функция для сравнения строк
+int streq(const char *a, const char *b) {
   int i = 0;
   while (a[i] && b[i]) {
     if (a[i] != b[i])
       return 0;
     i++;
   }
-  return a[i] == b[i]; // если вышли из цикла -> true (строки равны)
+  // если вышли из цикла -> true (строки равны)
+  return a[i] == b[i];
 }
 
 int main(int argc, char *argv[]) {
