@@ -1,94 +1,120 @@
 #include "s21_grep.h"
+
 #include <stdio.h>
+
 // ./s21_grep -e 'M' test.txt
 //
-int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    return 0;
-  }
+int main(int argc, char* argv[]) {
+  s_argv str_argv = {0};
 
-  char *file_name = NULL;
-  if (argv[1][0] == '-') {
-    if (argc < 3) {
-      return 0;
-    }
-    file_name = argv[3];
-    char *pattern = argv[2];
-
-    if (argv[1][0] == '-') {
-      switch (argv[1][1]) {
-      case 'e':
-        if (e_flag(pattern, file_name))
-          return 0;
-        break;
-      }
-    }
-  }
+  parse_args(argc, argv, &str_argv);
+  runner(&str_argv);
   return 0;
 }
 
-// // длина строки
-// int my_strlen(const char *str) {
-//   int i = 0;
-//   while (str[i])
-//     i++;
-//   return i;
-// }
+void parse_args(int argc, char** argv, s_argv* args) {
+  args->file =
+      malloc(sizeof(char*) * argc);  // выделяем память под массив файлов
+  for (int i = 1; i < argc; i++) {
+    if (argv[i][0] == '-') {
+      if (streq(argv[i], "-e")) {
+        args->flags.e = 1;
+      }
+      if (streq(argv[i], "-i")) {
+        args->flags.i = 1;
+      }
+      if (streq(argv[i], "-v")) {
+        args->flags.v = 1;
+      }
+      if (streq(argv[i], "-c")) {
+        args->flags.c = 1;
+      }
+      if (streq(argv[i], "-l")) {
+        args->flags.l = 1;
+      }
+      if (streq(argv[i], "-n")) {
+        args->flags.n = 1;
+      }
+    } else if (argv[i][0] = "\'") {
+      args->pattern.p = argv[i]; 
+    } 
+    else {
+      args->file[args->count_files++] = argv[i];
+    }
+  }
+}
 
-//Поиск паттерна в строке 
-// ВОзвращает булево значение
+void match_pattern(const char* line, const s_argv* args) {
+  if (args->flags.e) {
+    if (find_str(line, args->pattern.p)) {
+      printf("%s", line);
+      printf("\n");
+    }
+  }
+  if (args->flags.v) {
+    if (!find_str(line, args->pattern.p)) {
+      printf("%s", line);
+      printf("\n");
+    }
+  }
+  if (args -> flags)
+}
+
+
+void runner(s_argv* args) {
+  int line_count = 0;
+  int prev_empty = 0;
+  for (int i = 0; i < (args->count_files); i++) {
+    FILE* file = fopen(args->file[i], "r");
+    char line[1024];
+    while (fgets(line, sizeof(line), file) != NULL) {
+      match_pattern(line, args);
+    }
+    fclose(file);
+  }
+}
+
+
+// Поиск паттерна в строке
+//  ВОзвращает булево значение
 int find_str(const char *line, const char *pattern) {
   int strlen = 0;
   int patternlen = 0;
   // i - пробег по строке
   // j - пробег по паттерну
   // ищем длину строки
-  while (line[strlen] != '\0')
-    strlen++;
+  while (line[strlen] != '\0') strlen++;
   // ищем длину паттерна
-  while (pattern[patternlen] != '\0')
-    patternlen++;
+  while (pattern[patternlen] != '\0') patternlen++;
   int j;
   for (int i = 0; i <= strlen - patternlen; i++) {
     for (j = 0; j < patternlen; j++) {
       if (line[i + j] != pattern[j])
-        break; // выходим из верхнего цикла и перемещаем курсор строки на
-               // следующую букву
+        break;  // выходим из верхнего цикла и перемещаем курсор строки на
+                // следующую букву
     }
-    if (j == patternlen)
-      return 1; // если цикл не прервался возращаем True
+    if (j == patternlen) return 1;  // если цикл не прервался возращаем True
   }
-  return 0; // Не нашли совпадение паттерна для строки
+  return 0;  // Не нашли совпадение паттерна для строки
 }
-// // функция для сравнения строк
-// int streq(char *a, char *b) {
-//   int i = 0;
-//   while (a[i] && b[i]) {
-//     if (a[i] != b[i])
-//       return 0;
-//     i++;
-//   }
-//   return a[i] == b[i];
-// }
 
 int e_flag(char *pattern, char *filename) {
-
-  //работа с файлом
+  // работа с файлом
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
     printf("n/a");
     return 0;
   }
   // Обработка строк
-  char line[1024]; // создаем буфер для хранения строк
+  char line[1024];  // создаем буфер для хранения строк
   while (fgets(line, sizeof(line), file) != NULL) {
-		if(find_str(line, pattern)){
-			printf("%s", line); 
-			// printf("\n"); 
-		}
+    if (find_str(line, pattern)) {
+      printf("%s", line);
+      printf("\n");
+    }
   }
-	printf("\n");
-	fclose(file); 
+  printf("\n");
+  fclose(file);
   return 1;
 }
 
