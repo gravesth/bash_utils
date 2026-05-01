@@ -18,4 +18,7 @@ rebuild: clean all
 test: $(TARGET)
 	bash ./bash_test.sh
 
+verter: 
+	bash ../../materials/build/run.sh
+	
 .PHONY: all clean rebuild style test
