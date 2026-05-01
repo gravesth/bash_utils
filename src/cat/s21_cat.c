@@ -49,8 +49,8 @@ void parse_args(int argc, char** argv, s_argv* args) {
 //   }
 // }
 
-void string_processing(const char* string, const s_flags* flags, int* line_count,
-                       int* prev_empty) {
+void string_processing(const char* string, const s_flags* flags,
+                       int* line_count, int* prev_empty) {
   int is_empty = (string[0] == '\n');
   int squeeze_blank = flags->s;
   int number_nonblank = flags->b;

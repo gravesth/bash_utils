@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/ bin / bash
 set -e
 
 test_dir="tests"
@@ -42,7 +42,6 @@ do
   done
 done
 
-# очищаем файлы для сравнения 
+#очищаем файлы для сравнения 
 > "$OUT_DIR/my_cat.txt"
 > "$OUT_DIR/cat.txt"
-
