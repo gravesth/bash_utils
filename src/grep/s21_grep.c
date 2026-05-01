@@ -45,19 +45,26 @@ void parse_args(int argc, char** argv, s_argv* args) {
 }
 
 void match_pattern(const char* line, const s_argv* args) {
+  char *pattern = args->pattern.p;
   if (args->flags.e) {
-    if (find_str(line, args->pattern.p)) {
+    if (find_str(line, pattern)) {
       printf("%s", line);
       printf("\n");
     }
   }
   if (args->flags.v) {
-    if (!find_str(line, args->pattern.p)) {
+    if (!find_str(line, pattern)) {
       printf("%s", line);
       printf("\n");
     }
   }
-  if (args -> flags)
+  if (args -> flags.i) { 
+    char *line_to_lower = str_to_lower(line); 
+    if (find_str(line_to_lower, pattern)) {
+      printf("%s", line);
+      printf("\n");
+    }
+  }
 }
 
 
@@ -98,24 +105,14 @@ int find_str(const char *line, const char *pattern) {
   return 0;  // Не нашли совпадение паттерна для строки
 }
 
-int e_flag(char *pattern, char *filename) {
-  // работа с файлом
-  FILE *file = fopen(filename, "r");
-  if (file == NULL) {
-    printf("n/a");
-    return 0;
-  }
-  // Обработка строк
-  char line[1024];  // создаем буфер для хранения строк
-  while (fgets(line, sizeof(line), file) != NULL) {
-    if (find_str(line, pattern)) {
-      printf("%s", line);
-      printf("\n");
+char *str_to_lower(char *line) { 
+  for (int i = 0; line[i] != '\0'; i++)
+  {
+    if (line[i] >= 'A' && line[i] <= 'Z') {
+      line[i] = line[i] + 32; // сдвигаем по ascii до нижнего регистра
     }
   }
-  printf("\n");
-  fclose(file);
-  return 1;
+  return line; 
 }
 
 // int i_flag(char *pattern, char *filename) { return 0; }
