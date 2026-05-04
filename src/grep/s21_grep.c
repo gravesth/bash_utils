@@ -1,7 +1,5 @@
 #include "s21_grep.h"
 
-// ./s21_grep -e 'M' test.txt
-//
 static void print_line_like_grep(const char* line) {
   printf("%s", line);
   int i = 0;
@@ -99,15 +97,16 @@ void runner(s_argv* args) {
 // Поиск паттерна в строке
 //  ВОзвращает булево значение
 int find_str(const char* line, const char* pattern, int is_case_insensitive) {
-  int cflags = REG_EXTENDED;
+  int cflags = REG_EXTENDED;  // специальный флаг
   if (is_case_insensitive) cflags |= REG_ICASE;
   if (pattern == NULL) return 0;
 
   regex_t regex;
   int is_match = 0;
 
-  if (regcomp(&regex, pattern, cflags) == 0) {
-    is_match = (regexec(&regex, line, 0, NULL, 0) == 0);
+  if (regcomp(&regex, pattern, cflags) == 0) {  // компилируем выражение
+    is_match = (regexec(&regex, line, 0, NULL, 0) ==
+                0);  // сопоставляем строку с шаблоном
     regfree(&regex);
   }
 
