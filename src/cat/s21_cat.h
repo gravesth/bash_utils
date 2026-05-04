@@ -19,9 +19,8 @@ typedef struct s_argv {
 } s_argv;
 
 void parse_args(int argc, char** argv, s_argv* args);
-void print_string(char* string);
-void string_processing(char* string, s_flags* flags, int* line_count,
-                       int* prev_empty);
+void string_processing(const char* string, const s_flags* flags,
+                       int* line_count, int* prev_empty);
 void runner(s_argv* args);
 
 int is_control_sym(unsigned char ch);
