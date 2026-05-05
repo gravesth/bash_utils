@@ -1,12 +1,5 @@
 #include "s21_grep.h"
 
-static void print_line_like_grep(const char* line) {
-  printf("%s", line);
-  int i = 0;
-  while (line[i] != '\0') i++;
-  if (i == 0 || line[i - 1] != '\n') printf("\n");
-}
-
 int main(int argc, char* argv[]) {
   s_argv str_argv = {0};
 
@@ -16,8 +9,16 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
+void print_line_like_grep(const char* line) {
+  printf("%s", line);
+  int i = 0;
+  while (line[i] != '\0') i++;
+  if (i == 0 || line[i - 1] != '\n') printf("\n");
+}
+
 void parse_args(int argc, char** argv, s_argv* args) {
-  args->file = malloc(sizeof(char*) * argc);
+  args->file = malloc(sizeof(char*) *
+                      argc);  // выделяем чуть больше под хранение имен файлов
 
   for (int i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
@@ -40,9 +41,9 @@ void parse_args(int argc, char** argv, s_argv* args) {
           args->flags.n = 1;
         }
       }
-    } else if (!args->pattern.p) {
+    } else if (!args->pattern.p) {  // шаблон еще не задан
       args->pattern.p = argv[i];
-    } else {
+    } else {  // если шаблон и флаг уже есть
       args->file[args->count_files++] = argv[i];
     }
   }
@@ -50,18 +51,22 @@ void parse_args(int argc, char** argv, s_argv* args) {
 
 void match_pattern(const char* line, const s_argv* args, int* line_count,
                    const char* filename, int* file_printed) {
+  // флаг -i передаем чтобы в регулярных выражениях поставить флаг REG_ICASE
   int matched = find_str(line, args->pattern.p, args->flags.i);
-  int line_number = *line_count;
+  int line_number = *line_count;  // для флага -n
 
-  if (args->flags.v) matched = !matched;
+  if (args->flags.v)
+    matched = !matched;  // для флага -n выводим строки в которых find_str = 0
 
   if (matched) {
-    if (args->flags.c) {
+    if (args->flags.c) {  // только счетчик - ничего не выводим
       (*file_printed)++;
     } else if (args->flags.l) {
-      if (!(*file_printed)) {
+      if (!(*file_printed)) {  // выводим название файла если в нем есть хотя бы
+                               // 1 совпадение
         printf("%s\n", filename);
-        *file_printed = 1;
+        *file_printed =
+            1;  // срабатывает флаг(чтобы не дублировать вывод файла)
       }
     } else if (args->flags.n) {
       printf("%d:", line_number);
@@ -74,7 +79,7 @@ void match_pattern(const char* line, const s_argv* args, int* line_count,
   (*line_count)++;
 }
 
-void runner(s_argv* args) {
+void runner(const s_argv* args) {
   if (!args->pattern.p) return;
 
   for (int i = 0; i < (args->count_files); i++) {
@@ -83,12 +88,14 @@ void runner(s_argv* args) {
 
     char line[1024];
     int line_count = 1;
-    int file_printed = 0;
+    int file_printed = 0;  // обнуляем флаг вывода файла для каждой итерации
+                           // runner, когда пробегаемся по файлам
     while (fgets(line, sizeof(line), file) != NULL) {
       match_pattern(line, args, &line_count, args->file[i], &file_printed);
     }
     if (args->flags.c) {
-      printf("%d\n", file_printed);
+      printf("%d\n", file_printed);  // для КАЖДОГО файла печается количестов
+                                     // совпадающих строк(флаг -c)
     }
     fclose(file);
   }
@@ -97,8 +104,10 @@ void runner(s_argv* args) {
 // Поиск паттерна в строке
 //  ВОзвращает булево значение
 int find_str(const char* line, const char* pattern, int is_case_insensitive) {
-  int cflags = REG_EXTENDED;  // специальный флаг
-  if (is_case_insensitive) cflags |= REG_ICASE;
+  int cflags =
+      REG_EXTENDED;  // Включение ERE расширенного поиска регулярных выражений
+  if (is_case_insensitive)
+    cflags |= REG_ICASE;  // для флага i - не учитываем регистр
   if (pattern == NULL) return 0;
 
   regex_t regex;
@@ -111,16 +120,4 @@ int find_str(const char* line, const char* pattern, int is_case_insensitive) {
   }
 
   return is_match;
-}
-
-void str_to_lower(const char* src, char* dst) {
-  int i = 0;
-  for (; src[i] != '\0'; i++) {
-    if (src[i] >= 'A' && src[i] <= 'Z') {
-      dst[i] = src[i] + 32;  // сдвигаем по ascii до нижнего регистра
-    } else {
-      dst[i] = src[i];
-    }
-  }
-  dst[i] = '\0';
 }

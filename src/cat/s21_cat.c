@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
 
   parse_args(argc, argv, &str_argv);
   runner(&str_argv);
-
+  free(str_argv.file);
   return 0;
 }
 
