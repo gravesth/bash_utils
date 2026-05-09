@@ -22,10 +22,10 @@ typedef struct s_argv {
   char** file;
 } s_argv;
 
-void parse_args(int argc, char** argv, s_argv* args);
+int parse_args(int argc, char** argv, s_argv* args);
 void match_pattern(const char* line, const s_argv* args, int* line_count,
                    const char* filename, int* file_printed);
 void runner(const s_argv* args);
 int find_str(const char* line, const char* pattern, int is_case_insensitive);
-void str_to_lower(const char* src, char* dst);
 void print_line_like_grep(const char* line);
+int handle_flag(const char* arg, int* i, int argc, char** argv, s_argv* args);

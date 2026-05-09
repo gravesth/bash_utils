@@ -16,37 +16,63 @@ void print_line_like_grep(const char* line) {
   if (i == 0 || line[i - 1] != '\n') printf("\n");
 }
 
-void parse_args(int argc, char** argv, s_argv* args) {
-  args->file = malloc(sizeof(char*) *
-                      argc);  // выделяем чуть больше под хранение имен файлов
-
-  for (int i = 1; i < argc; i++) {
-    if (argv[i][0] == '-') {
-      for (int j = 1; argv[i][j] != '\0'; j++) {
-        if (argv[i][j] == 'e') {
-          args->flags.e = 1;
-          if (i + 1 < argc) {
-            args->pattern.p = argv[++i];
-          }
-          break;
-        } else if (argv[i][j] == 'i') {
-          args->flags.i = 1;
-        } else if (argv[i][j] == 'v') {
-          args->flags.v = 1;
-        } else if (argv[i][j] == 'c') {
-          args->flags.c = 1;
-        } else if (argv[i][j] == 'l') {
-          args->flags.l = 1;
-        } else if (argv[i][j] == 'n') {
-          args->flags.n = 1;
-        }
+int handle_flag(const char* arg, int* i, int argc, char** argv, s_argv* args) {
+  int err = 0;
+  for (int j = 1; arg[j] != '\0'; j++) {
+    if (arg[j] == 'e') {
+      args->flags.e = 1;
+      if ((*i) + 1 >= argc) {
+        printf("Ошибка: после -e нет паттерна\n");
+        err = 1;
+      } else {
+        args->pattern.p = argv[(*i) + 1];
+        (*i)++;
       }
-    } else if (!args->pattern.p) {  // шаблон еще не задан
-      args->pattern.p = argv[i];
-    } else {  // если шаблон и флаг уже есть
-      args->file[args->count_files++] = argv[i];
+      break;
+    } else if (arg[j] == 'i') {
+      args->flags.i = 1;
+    } else if (arg[j] == 'v') {
+      args->flags.v = 1;
+    } else if (arg[j] == 'c') {
+      args->flags.c = 1;
+    } else if (arg[j] == 'l') {
+      args->flags.l = 1;
+    } else if (arg[j] == 'n') {
+      args->flags.n = 1;
     }
   }
+  return err;
+}
+
+int parse_args(int argc, char** argv, s_argv* args) {
+  int err = 0;
+  args->file = malloc(sizeof(char*) * argc);
+
+  for (int i = 1; i < argc && !err; i++) {
+    // обработка флагов
+    if (argv[i][0] == '-') {
+      err = handle_flag(argv[i], &i, argc, argv, args);
+      continue;
+    }
+    // паттерн
+    if (!args->pattern.p) {
+      args->pattern.p = argv[i];
+      continue;
+    }
+    // файлы
+    args->file[args->count_files++] = argv[i];
+  }
+
+  if (!err && !args->pattern.p) {
+    printf("Отсутствует паттерн\n");
+    err = 1;
+  }
+
+  if (!err && args->count_files == 0) {
+    printf("Отсутствует файл\n");
+    err = 1;
+  }
+  return err;
 }
 
 void match_pattern(const char* line, const s_argv* args, int* line_count,
@@ -65,8 +91,8 @@ void match_pattern(const char* line, const s_argv* args, int* line_count,
       if (!(*file_printed)) {  // выводим название файла если в нем есть хотя бы
                                // 1 совпадение
         printf("%s\n", filename);
-        *file_printed =
-            1;  // срабатывает флаг(чтобы не дублировать вывод файла)
+        // срабатывает флаг (чтобы не дублировать вывод файла)
+        *file_printed = 1;
       }
     } else if (args->flags.n) {
       printf("%d:", line_number);
@@ -84,7 +110,10 @@ void runner(const s_argv* args) {
 
   for (int i = 0; i < (args->count_files); i++) {
     FILE* file = fopen(args->file[i], "r");
-    if (file == NULL) continue;
+    if (file == NULL) {
+      printf("%s", "Произошла ошибка при открытии файла");
+      continue;
+    }
 
     char line[1024];
     int line_count = 1;
@@ -107,17 +136,23 @@ int find_str(const char* line, const char* pattern, int is_case_insensitive) {
   int cflags =
       REG_EXTENDED;  // Включение ERE расширенного поиска регулярных выражений
   if (is_case_insensitive)
-    cflags |= REG_ICASE;  // для флага i - не учитываем регистр
-  if (pattern == NULL) return 0;
+    cflags = cflags | REG_ICASE;  // для флага i - не учитываем регистр.
+  if (pattern == NULL || line == NULL) return 0;
 
   regex_t regex;
   int is_match = 0;
 
-  if (regcomp(&regex, pattern, cflags) == 0) {  // компилируем выражение
+  int err = regcomp(&regex, pattern, cflags);
+
+  if (err == 0) {  // компилируем выражение
     is_match = (regexec(&regex, line, 0, NULL, 0) ==
                 0);  // сопоставляем строку с шаблоном
     regfree(&regex);
+  } else {
+    char buf[300];
+    regerror(err, NULL, buf, 300);
+    printf("Ошибка компииляции regcomp %s\n", buf);
+    return 0;
   }
-
   return is_match;
 }

@@ -43,12 +43,6 @@ void parse_args(int argc, char** argv, s_argv* args) {
   }
 }
 
-// void print_string(const char* string) {
-//   for (int i = 0; string[i] != '\0'; i++) {
-//     printf("%c", string[i]);
-//   }
-// }
-
 void string_processing(const char* string, const s_flags* flags,
                        int* line_count, int* prev_empty) {
   int is_empty = (string[0] == '\n');
@@ -95,7 +89,10 @@ void runner(s_argv* args) {
   int prev_empty = 0;
   for (int i = 0; i < (args->count_files); i++) {
     FILE* file = fopen(args->file[i], "r");
-
+    if (file == NULL) {
+      printf("%s", "Произошла ошибка при открытии файла");
+      continue;
+    }
     char line[1024];
 
     while (fgets(line, sizeof(line), file) != NULL) {
